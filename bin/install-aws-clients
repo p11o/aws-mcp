@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Temporary file to store the list of packages
+TEMP_FILE=$(mktemp)
+
+# Function to fetch AWS SDK v3 client packages using npm registry search API
+fetch_clients() {
+  echo "Fetching list of @aws-sdk/client-* packages from npm registry..."
+  # Using the npm registry search API for a more performant response.
+  # This endpoint returns a smaller JSON response.
+  curl -s "https://registry.npmjs.org/-/v1/search?text=@aws-sdk/client-&size=500" | \
+    jq -r '.objects[] | select(.package.name | startswith("@aws-sdk/client")) | .package | .name' >  "$TEMP_FILE"
+}
+
+# Fetch the client list
+fetch_clients
+
+# Read the list of packages into an array
+mapfile -t PACKAGES < "$TEMP_FILE"
+
+# Clean up temporary file
+rm -f "$TEMP_FILE"
+
+# Check if any packages were found
+if [ ${#PACKAGES[@]} -eq 0 ]; then
+  echo "No @aws-sdk/client-* packages found."
+  exit 1
+fi
+
+# Install all packages with Bun
+echo "Installing ${#PACKAGES[@]} AWS SDK v3 client packages with Bun..."
+echo "Packages: ${PACKAGES[*]}"
+bun add "${PACKAGES[@]}"
+
+if [ $? -eq 0 ]; then
+  echo "All AWS client packages installed successfully!"
+else
+  echo "Failed to install some packages."
+fi
+
+echo "Done!"

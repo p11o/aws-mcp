@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+git clone --depth=1 https://github.com/aws/aws-sdk-js-v3.git
+
+echo "Smithy models downloaded to aws-sdk-js-v3/codegen/sdk-codegen/aws-models"

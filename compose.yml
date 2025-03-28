@@ -1,0 +1,15 @@
+services:
+  aws-mcp:
+    build:
+      context: .
+      target: dev
+    ports:
+    - 5173:5173
+    - 3000:3000
+    tty: true
+    volumes:
+    - bun:/app/.bun
+    - $HOME/.aws:/root/.aws
+
+volumes:
+  bun:
