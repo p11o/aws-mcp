@@ -38,10 +38,20 @@ export async function loadTools(server: McpServer): Promise<Map<string, any>> {
         const zodSchema = await generateZodSchemasFromSmithy(serviceName);
         commandClasses.forEach(([commandName, CommandClass]) => {
           const operationName = commandName.replace('Command', '');
+          const schemaKey = Object.keys(zodSchema).find(key =>
+            key.toLowerCase().includes(operationName.toLowerCase()) &&
+            key.toLowerCase().endsWith('request')
+          );
+
+          if (!schemaKey) {
+            console.error(`Schema not found for ${serviceName}_${operationName}`);
+            return;
+          }
+
           server.tool(
             `${serviceName}_${operationName}`,
             `${serviceName} ${operationName}`,
-            zodSchema[`com.amazonaws.${serviceName}#${operationName}Request`].shape,
+            zodSchema[schemaKey].shape,
             async (args) => {
               const command = new CommandClass(args);
               const content = await client.send(command);

@@ -28,7 +28,7 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
       case 'string':
         schema = z.string();
         if (shape.traits?.['smithy.api#pattern']) {
-          schema = schema.regex(new RegExp(shape.traits['smithy.api#pattern']));
+          schema = schema.regex(new RegExp(shape.traits['smithy.api#pattern'], 'u'));
         }
         if (shape.traits?.['smithy.api#length']) {
           const { min, max } = shape.traits['smithy.api#length'];
@@ -38,6 +38,15 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         if (shape.traits?.['smithy.api#enum']) {
           const enumValues = Object.values(shape.traits['smithy.api#enum']).map((e: any) => e.value);
           schema = z.enum(enumValues as [string, ...string[]]);
+        }
+        break;
+
+      case 'double':
+        schema = z.number();
+        if (shape.traits?.['smithy.api#range']) {
+          const { min, max } = shape.traits['smithy.api#range'];
+          if (min !== undefined) schema = schema.min(min);
+          if (max !== undefined) schema = schema.max(max);
         }
         break;
 
@@ -64,6 +73,9 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         break;
 
       case 'structure':
+        // Create a placeholder to break circular references
+        schemaCache[shapeName] = z.lazy(() => z.object({}));
+
         const members: Record<string, z.ZodType> = {};
         for (const [memberName, member] of Object.entries(shape.members || {})) {
           const memberSchema = buildSchema((member as any).target);
@@ -71,6 +83,8 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
           members[memberName] = required ? memberSchema : memberSchema.optional();
         }
         schema = z.object(members);
+        // Update the cache with the complete schema
+        schemaCache[shapeName] = schema;
         break;
 
       case 'list':
@@ -102,7 +116,7 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         break;
 
       default:
-        throw new Error(`Unsupported shape type: ${shape.type}`);
+        throw new Error(`Unsupported shape type: ${shapeName} - ${shape.type}`);
     }
 
     schemaCache[shapeName] = schema;
