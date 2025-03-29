@@ -60,6 +60,7 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         }
         break;
 
+      case 'float':
       case 'double':
         schema = z.number();
         if (shape.traits?.['smithy.api#range']) {
