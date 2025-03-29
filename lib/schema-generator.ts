@@ -119,9 +119,14 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         break;
 
       case 'map':
+        // Create a placeholder to break circular references
+        schemaCache[shapeName] = z.lazy(() => z.object({}));
+
         const keySchema = shape.key?.target ? buildSchema(shape.key.target) : z.string();
         const valueSchema = shape.value?.target ? buildSchema(shape.value.target) : buildSchema(shape.value);
         schema = z.record(keySchema, valueSchema);
+        // Update the cache with the complete schema
+        schemaCache[shapeName] = schema;
         break;
 
       case 'enum':
@@ -130,11 +135,15 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         break;
 
       case 'union':
+        // Create a placeholder to break circular references
+        schemaCache[shapeName] = z.lazy(() => z.object({}));
         const unionMembers = Object.values(shape.members).reduce((acc: any, member) => {
           const memberSchema = buildSchema((member as any).target);
           return [...acc, memberSchema];
         }, [] as z.ZodType[]);
         schema = z.union(unionMembers);
+        // Update the cache with the complete schema
+        schemaCache[shapeName] = schema;
         break;
 
       default:
