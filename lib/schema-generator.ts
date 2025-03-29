@@ -15,9 +15,19 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
     if (schemaCache[shapeName]) {
       return schemaCache[shapeName];
     }
+    // For built-in Smithy types, we map to their corresponding shapes
+    if (shapeName.startsWith('smithy.api#')) {
+      const baseType = shapeName.split('#')[1].toLowerCase();
+      // Use a mock shape that matches the Smithy type
+      const shape = {
+        type: baseType,
+        traits: {}
+      };
+      shapes[shapeName] = shape;
+    }
 
     const shape = shapes[shapeName];
-    if (['service', 'operation'].includes(shape.type)) {
+    if (['service', 'operation'].includes(shape?.type)) {
       return {};
     }
     if (!shape) throw new Error(`Shape ${shapeName} not found`);
@@ -25,10 +35,19 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
     let schema;
 
     switch (shape.type) {
+      case 'document':
       case 'string':
         schema = z.string();
         if (shape.traits?.['smithy.api#pattern']) {
-          schema = schema.regex(new RegExp(shape.traits['smithy.api#pattern'], 'u'));
+          const pattern = shape.traits['smithy.api#pattern']
+            .replace(/\\/g, '\\\\') // Escape backslashes
+            .replace(/\//g, '\\/');  // Escape forward slashes
+          try {
+            schema = schema.regex(new RegExp(pattern, 'u'));
+          } catch (e) {
+            console.error(`Invalid pattern for ${shapeName}:`, pattern);
+            // Fall back to basic string if pattern is invalid
+          }
         }
         if (shape.traits?.['smithy.api#length']) {
           const { min, max } = shape.traits['smithy.api#length'];
@@ -72,6 +91,7 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         schema = z.string(); // Assuming base64; adjust if needed
         break;
 
+      case 'resource':
       case 'structure':
         // Create a placeholder to break circular references
         schemaCache[shapeName] = z.lazy(() => z.object({}));
@@ -98,8 +118,9 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
         break;
 
       case 'map':
-        const valueSchema = buildSchema(shape.value.target);
-        schema = z.record(z.string(), valueSchema);
+        const keySchema = shape.key?.target ? buildSchema(shape.key.target) : z.string();
+        const valueSchema = shape.value?.target ? buildSchema(shape.value.target) : buildSchema(shape.value);
+        schema = z.record(keySchema, valueSchema);
         break;
 
       case 'enum':
