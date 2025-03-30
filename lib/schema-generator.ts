@@ -2,7 +2,7 @@ import { file } from 'bun';
 import path from 'path';
 import { z } from 'zod';
 
-export async function generateZodSchemasFromSmithy(service: string): Promise<Record<string, z.ZodType>> {
+export async function generateZodSchemasFromSmithy(service: string): Promise<any> {
   const modelPath = path.join(process.cwd(), 'aws-sdk-js-v3', 'codegen', 'sdk-codegen', 'aws-models', `${service}.json`);
   const smithyJson = await file(modelPath).json();
   const shapes = smithyJson.shapes || {};
@@ -160,5 +160,5 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<Rec
     operationSchemas[operationName] = buildSchema(operationName);
   }
 
-  return operationSchemas;
+  return { zodSchema: operationSchemas, smithy: smithyJson };
 }
