@@ -64,7 +64,7 @@ export async function loadTools(server: McpServer): Promise<Map<string, any>> {
               const content = await client.send(command);
               return {
                 content: [
-                  { text: JSON.stringify(content, null, 2), type: 'sdf' }
+                  { text: JSON.stringify(content, null, 2), type: 'text' }
                 ]
               };
             }
