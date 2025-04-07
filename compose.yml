@@ -2,12 +2,17 @@ services:
   aws-mcp:
     build:
       context: .
+      target: prod
+  aws-mcp-dev:
+    build:
+      context: .
       target: dev
     ports:
-    - 5173:5173
-    - 3000:3000
+    - 6274:6274
+    - 6277:6277
     tty: true
     volumes:
+    #- ./lib:/app/lib
     - bun:/app/.bun
     - $HOME/.aws:/root/.aws
 

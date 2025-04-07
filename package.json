@@ -257,6 +257,8 @@
     "@aws-sdk/client-workspaces": "^3.772.0",
     "@aws-sdk/client-xray": "^3.772.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
+    "express": "^5.1.0",
+    "jsdom": "^26.0.0",
     "openai": "^4.87.3",
     "zod": "^3.24.2"
   }

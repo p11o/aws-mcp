@@ -45,7 +45,7 @@ export async function generateZodSchemasFromSmithy(service: string): Promise<any
           try {
             schema = schema.regex(new RegExp(pattern, 'u'));
           } catch (e) {
-            console.error(`Invalid pattern for ${shapeName}:`, pattern);
+            // console.error(`Invalid pattern for ${shapeName}:`, pattern);
             // Fall back to basic string if pattern is invalid
           }
         }

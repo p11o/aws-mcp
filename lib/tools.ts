@@ -1,13 +1,21 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { file } from 'bun';
+import { JSDOM } from 'jsdom';
 import path from 'path';
 import { generateZodSchemasFromSmithy } from "./schema-generator";
 
+const stripHtmlTags = (html: string): string => {
+  const dom = new JSDOM();
+  const div = dom.window.document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || '';
+};
 
-export const getToolDescription = (smithy: any, service: string, operation: string): Promise<string> => {
+export const getToolDescription = (smithy: any, service: string, operation: string): string => {
   const shapes = smithy.shapes || {};
 
-  return shapes[`com.amazonaws.${service}#${operation}`]?.traits?.['smithy.api#documentation'] || '';
+  const desc = shapes[`com.amazonaws.${service}#${operation}`]?.traits?.['smithy.api#documentation'] || '';
+  return stripHtmlTags(desc);
 }
 
 // Load AWS clients from package.json
@@ -76,7 +84,7 @@ export async function loadTools(server: McpServer): Promise<Map<string, any>> {
     } catch (error) {
       console.error(`Failed to load package ${pkg}:`, error);
     }
-    console.error(`Loaded tool for ${serviceName}`);
+    console.log(`Loaded tool for ${serviceName}`);
 
   }
 
