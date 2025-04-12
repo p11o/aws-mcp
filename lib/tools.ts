@@ -18,7 +18,6 @@ export const getToolDescription = (smithy: any, service: string, operation: stri
   return stripHtmlTags(desc);
 }
 
-let { PACKAGE_OFFSET, PACKAGE_LIMIT } = process.env;
 
 // Load AWS clients from package.json
 export async function loadTools(server: McpServer): Promise<Map<string, any>> {
@@ -30,17 +29,9 @@ export async function loadTools(server: McpServer): Promise<Map<string, any>> {
   const dependencies = packageJson.dependencies || {};
 
   // Identify AWS SDK client packages
-  let awsClientPackages = Object.keys(dependencies).filter(dep =>
+  const awsClientPackages = Object.keys(dependencies).filter(dep =>
     dep.startsWith('@aws-sdk/client-')
   );
-
-  PACKAGE_OFFSET = parseInt(PACKAGE_OFFSET) || 0;
-  PACKAGE_LIMIT = parseInt(PACKAGE_LIMIT) || PACKAGE_OFFSET - awsClientPackages.length;
-  console.log(`Found AWS SDK client packages: ${awsClientPackages.length}`);
-  console.log(`using ${PACKAGE_OFFSET} to ${PACKAGE_OFFSET + PACKAGE_LIMIT}`);
-
-  awsClientPackages = awsClientPackages.slice(PACKAGE_OFFSET, PACKAGE_OFFSET + PACKAGE_LIMIT);
-
 
   // Dynamically import and instantiate each client
   for (const pkg of awsClientPackages) {
